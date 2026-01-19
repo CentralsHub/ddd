@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daryls Declaration Decoder - Inspection Report to Declaration Converter</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="styles.css?v=9">
+</head>
+<body>
+    <!-- Password Lock Screen -->
+    <div id="lock-screen" class="lock-screen">
+        <div class="lock-container">
+            <h1>🔒 Daryls Declaration Decoder</h1>
+            <p class="lock-subtitle">Enter password to continue</p>
+            <input type="password" id="password-input" placeholder="Password" autocomplete="off">
+            <button id="unlock-btn" class="btn btn-primary">Unlock</button>
+            <p id="lock-error" class="lock-error"></p>
+        </div>
+    </div>
+
+    <div class="container" id="main-container" style="display: none;">
+        <header>
+            <h1>Daryls Declaration Decoder</h1>
+            <p class="subtitle">Automated Inspection Report to Declaration Converter</p>
+        </header>
+
+        <main>
+            <!-- Step 1: Upload Files -->
+            <section class="card" id="upload-section">
+                <h2>Step 1: Upload Inspection Reports</h2>
+                <div class="upload-zone" id="upload-zone">
+                    <svg class="upload-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p class="upload-text">Drag and drop files here or click to browse</p>
+                    <p class="upload-hint">Supports PDF, JPG, PNG (multiple files)</p>
+                    <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png,image/jpeg,image/jpg,image/png,application/pdf" multiple hidden>
+                </div>
+
+                <div class="file-list" id="file-list"></div>
+
+                <button class="btn btn-primary" id="process-btn" disabled>
+                    <span>Process Files</span>
+                </button>
+            </section>
+
+            <!-- Step 2: Review and Edit Data -->
+            <section class="card" id="review-section" style="display: none;">
+                <h2>Step 2: Review and Edit Extracted Data</h2>
+
+                <div class="table-container" id="data-table-container">
+                    <!-- Table will be inserted here -->
+                </div>
+            </section>
+
+            <!-- Step 3: Download Results -->
+            <section class="card" id="download-section" style="display: none;">
+                <h2>Step 3: Download Results</h2>
+                <div class="download-buttons">
+                    <button class="btn btn-success" id="download-excel-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Download Excel</span>
+                    </button>
+                    <button class="btn btn-success" id="download-pdfs-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Download Filled PDFs (ZIP)</span>
+                    </button>
+                </div>
+                <button class="btn btn-secondary" id="start-over-btn">Start Over</button>
+            </section>
+
+            <!-- Progress Indicator -->
+            <div class="progress-container" id="progress-container" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <p class="progress-text" id="progress-text">Processing...</p>
+            </div>
+
+            <!-- Messages -->
+            <div class="message" id="message" style="display: none;"></div>
+        </main>
+
+        <footer>
+            <p>Daryls Declaration Decoder v1.0 - Streamlining vehicle documentation workflow</p>
+        </footer>
+    </div>
+
+    <script src="app.js?v=9"></script>
+</body>
+</html>
