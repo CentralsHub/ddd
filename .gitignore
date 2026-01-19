@@ -29,3 +29,14 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Claude settings (local only)
+.claude/
+
+# Sample files and test data
+Samples/
+Daryls-Declaration-Decoder/
+
+# PDF files (except templates)
+*.pdf
+!Example.pdf

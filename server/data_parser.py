@@ -17,7 +17,8 @@ class DataParser:
             'odometer': r'Odometer\s*:?\s*([0-9,\s]+)',  # More flexible, allows spaces
             # More flexible engine number pattern - can be alphanumeric with various lengths
             'engine_no': r'(?:Engine|o")\s*(?:No|N0)\s*:?\s*([A-Z0-9]{6,15})',
-            'vin': r'VIN\s*:?\s*([A-Z0-9]{17})',
+            # VIN pattern - capture 17+ chars but stop before "Reg" keyword to avoid grabbing too much
+            'vin': r'VIN\s*:?\s*([A-Z0-9\s]{15,25})(?=\s*(?:Reg|$))',
             'reg': r'Reg\s*:?\s*([A-Z0-9]+)',
             'rego_expiry': r'Rego\s+Expiry\s*:?\s*(\d{1,2}/\d{1,2}/\d{2,4})',
             'vehicle_description': r'(\d{2}/\d{2})\s*-\s*(\d{2}/\d{2})\s+([A-Z]+)\s+([A-Z0-9\s]+?)\s+(BK|MY|GL|GX|SP|LIMITED|SPORT|NEO|MAXX)[^\n]*?(\d[A-Z]{1,2}\s+(?:SEDAN|HATCH|WAGON|UTE|SUV|COUPE|CONVERTIBLE|VAN))[^\n]*?(\d\.?\d?L)?\s*(\d\s*CYL)?\s*(\d\s*SP)?\s*(MANUAL|AUTO|AUTOMATIC)?(?:\s+([A-Z]+(?:\s+[A-Z]+)*))?'
@@ -116,7 +117,8 @@ class DataParser:
         # Fix common OCR mistakes in VIN and engine number (O -> 0)
         # Only apply to these fields to avoid breaking text matching elsewhere
         if data['vin']:
-            data['vin'] = data['vin'].replace('O', '0')
+            # Remove spaces first, then replace O with 0
+            data['vin'] = data['vin'].replace(' ', '').replace('O', '0')
         if data['engine_no']:
             data['engine_no'] = data['engine_no'].replace('O', '0')
 
@@ -141,10 +143,12 @@ class DataParser:
 
             # Extract Model - improved logic to handle various formats
             model_parts = []
-            type_keywords = ['SEDAN', 'HATCH', 'WAGON', 'UTE', 'SUV', 'COUPE', 'VAN', 'CONVERTIBLE']
+            type_keywords = ['SEDAN', 'HATCH', 'HATCHBACK', 'WAGON', 'UTE', 'UTILITY', 'SUV', 'COUPE',
+                           'VAN', 'CONVERTIBLE', 'CABRIOLET', 'CAB', 'CHASSIS', 'CHAS']
             badge_keywords = ['NEO', 'SPORT', 'BK', 'MY', 'GL', 'GX', 'SP', 'LIMITED', 'MAXX',
                              'VTI', 'SX', 'VX', 'LS', 'LT', 'LTZ', 'RS', 'SV', 'ST', 'TI', 'ACTIVE',
-                             'X', 'S', 'SE', 'XE', 'XT', 'XR', 'XLS', 'SR', 'SL', 'DX', 'EX']
+                             'X', 'S', 'SE', 'XE', 'XT', 'XR', 'XLS', 'SR', 'SL', 'DX', 'EX',
+                             'ASCENT', 'CONQUEST', 'CLASSIC', 'ELEGANCE', 'LUXURY', 'PREMIUM']
 
             # Get just the model - stop at first badge or type keyword
             for i, part in enumerate(parts[1:], 1):
@@ -174,10 +178,24 @@ class DataParser:
             model_name = re.sub(r'([A-Z]+)(\d+)', r'\1 \2', model_name)
             data['model'] = model_name.title()  # Capitalize properly
 
-            # Extract type (e.g., "4D SEDAN")
-            type_match = re.search(r'(\d+[A-Z]{0,2}\s+(?:SEDAN|HATCH|WAGON|UTE|SUV|COUPE|CONVERTIBLE|VAN))', desc_line, re.IGNORECASE)
-            if type_match:
-                data['type'] = type_match.group(1).title()
+            # Extract type - expanded to match all requested body types
+            # Patterns: "4DR Sedan", "3DR Hatch", "Single Cab", "C/Chassis", "Double Cab P/Up", etc.
+            type_patterns = [
+                r'\d+DR\s+(?:Sedan|Hatch|Hatchback|Cabriolet|Convertible)',  # 3DR Hatch, 4DR Sedan, etc.
+                r'(?:Single|Dual|Double)\s+Cab(?:\s+P/Up)?',  # Single Cab, Dual Cab, Double Cab P/Up
+                r'C/(?:Chassis|Chas)',  # C/Chassis, C/Chas
+                r'\d+D\s+(?:SEDAN|HATCH|WAGON|COUPE|CONVERTIBLE)',  # 4D SEDAN (legacy format)
+                r'(?:Wagon|Ute|Utility|Coupe)',  # Standalone types
+            ]
+
+            type_found = None
+            for pattern in type_patterns:
+                type_match = re.search(pattern, desc_line, re.IGNORECASE)
+                if type_match:
+                    type_found = type_match.group(0)
+                    break
+
+            data['type'] = type_found.title() if type_found else ''
 
             # Extract transmission
             if 'MANUAL' in desc_line.upper():

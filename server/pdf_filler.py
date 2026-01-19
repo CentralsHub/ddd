@@ -107,14 +107,14 @@ class PDFFiller:
             can.drawString(x_vin_start + (i * eng_box_width), y_row3, char)
 
         # Rego Expires (right side of row 3) - moved up 2px
-        x_rego_exp = 466
+        x_rego_exp = 467
         if data.get('rego_expiry'):
-            can.drawString(x_rego_exp, y_row3 + 2, str(data['rego_expiry']))
+            can.drawString(x_rego_exp, y_row3 + 3, str(data['rego_expiry']))
 
         # KMS (far right of row 3) - moved up 2px
-        x_kms = 535
+        x_kms = 536
         if data.get('odometer'):
-            can.drawString(x_kms, y_row3 + 2, str(data['odometer']))
+            can.drawString(x_kms, y_row3 + 3, str(data['odometer']))
 
         # Row 4: Stock Number - 2px larger
         y_row4 = y_row1 - 88
@@ -196,6 +196,51 @@ class PDFFiller:
             output_files.append(output_path)
 
         return output_files
+
+    def fill_single_multipage_pdf(self, data_list: list, output_path: str) -> str:
+        """
+        Fill multiple declarations into a single multi-page PDF
+
+        Args:
+            data_list: List of data dictionaries (each with seller_name)
+            output_path: Path where the single multi-page PDF should be saved
+
+        Returns:
+            Output file path
+        """
+        try:
+            # Create output PDF writer
+            output = PdfWriter()
+
+            # Read template once
+            template_pdf = PdfReader(self.template_path)
+            template_page = template_pdf.pages[0]
+            page_width = float(template_page.mediabox.width)
+            page_height = float(template_page.mediabox.height)
+
+            # For each data entry, create a new page
+            for data in data_list:
+                # Create overlay with data
+                seller = data.get('seller_name', '')
+                overlay_bytes = self.create_overlay(data, (page_width, page_height), seller)
+                overlay_pdf = PdfReader(io.BytesIO(overlay_bytes))
+
+                # Create a fresh copy of the template page for each entry
+                template_pdf_fresh = PdfReader(self.template_path)
+                page = template_pdf_fresh.pages[0]
+
+                # Merge template and overlay
+                page.merge_page(overlay_pdf.pages[0])
+                output.add_page(page)
+
+            # Write output
+            with open(output_path, 'wb') as output_file:
+                output.write(output_file)
+
+            return output_path
+
+        except Exception as e:
+            raise Exception(f"Error creating single multi-page PDF: {str(e)}")
 
 
 if __name__ == "__main__":

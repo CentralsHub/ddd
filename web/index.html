@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daryls Declaration Decoder - Inspection Report to Declaration Converter</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="stylesheet" href="styles.css?v=9">
+    <link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body>
     <!-- Password Lock Screen -->
@@ -52,7 +52,7 @@
                 <h2>Step 2: Review and Edit Extracted Data</h2>
 
                 <div class="table-container" id="data-table-container">
-                    <!-- Table will be inserted here -->
+                    <!-- Data cards will be inserted here -->
                 </div>
             </section>
 
@@ -67,6 +67,14 @@
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
                         <span>Download Excel</span>
+                    </button>
+                    <button class="btn btn-success" id="download-single-pdf-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Download Single PDF</span>
                     </button>
                     <button class="btn btn-success" id="download-pdfs-btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -97,6 +105,6 @@
         </footer>
     </div>
 
-    <script src="app.js?v=9"></script>
+    <script src="app.js?v=11"></script>
 </body>
 </html>

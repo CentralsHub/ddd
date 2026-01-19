@@ -17,6 +17,7 @@ const progressText = document.getElementById('progress-text');
 const messageEl = document.getElementById('message');
 const dataTableContainer = document.getElementById('data-table-container');
 const downloadExcelBtn = document.getElementById('download-excel-btn');
+const downloadSinglePdfBtn = document.getElementById('download-single-pdf-btn');
 const downloadPdfsBtn = document.getElementById('download-pdfs-btn');
 const startOverBtn = document.getElementById('start-over-btn');
 
@@ -42,6 +43,7 @@ uploadZone.addEventListener('drop', handleDrop);
 fileInput.addEventListener('change', handleFileSelect);
 processBtn.addEventListener('click', processFiles);
 downloadExcelBtn.addEventListener('click', downloadExcel);
+downloadSinglePdfBtn.addEventListener('click', downloadSinglePDF);
 downloadPdfsBtn.addEventListener('click', downloadPDFs);
 startOverBtn.addEventListener('click', startOver);
 
@@ -179,10 +181,13 @@ async function processFiles() {
 
         const result = await response.json();
 
-        // Store extracted data
+        // Store extracted data with thumbnails
         extractedData = result.results
             .filter(r => r.status === 'success')
-            .map(r => r.data);
+            .map(r => ({
+                ...r.data,
+                thumbnail: r.thumbnail
+            }));
 
         hideProgress();
 
@@ -205,120 +210,160 @@ async function processFiles() {
     }
 }
 
-// Display Data Table
+// Display Data Table - NEW VERTICAL LAYOUT
 function displayDataTable() {
-    const headers = ['Seller Name', 'Stock #', 'Year', 'Make', 'Model', 'Type', 'Auto/Man', 'Colour'];
-    const detailHeaders = ['Engine No', 'VIN', 'Reg', 'Rego Expiry', 'KMS'];
+    let html = '';
 
-    const fields = ['mta', 'year', 'make', 'model', 'type', 'transmission', 'color'];
-    const detailFields = ['engine_no', 'vin', 'reg', 'rego_expiry', 'odometer'];
-
-    let tableHTML = '<table>';
-
-    // Add data rows
     extractedData.forEach((data, rowIndex) => {
-        // Vehicle group wrapper
-        tableHTML += '<tbody class="vehicle-group">';
-
-        // First header row - using TH elements in regular TR (not thead)
-        tableHTML += '<tr class="header-row">';
-        tableHTML += '<th colspan="3">Seller Name</th>'; // Increased from 2 to 3
-        tableHTML += '<th>Stock #</th>';
-        tableHTML += '<th class="year-col">Year</th>'; // Half width
-        tableHTML += '<th>Make</th>';
-        tableHTML += '<th>Model</th>';
-        tableHTML += '<th>Type</th>';
-        tableHTML += '<th>Auto/Man</th>';
-        tableHTML += '<th>Colour</th>';
-        tableHTML += '</tr>';
-
-        // First row of data
-        tableHTML += '<tr class="data-row">';
-
-        // Seller name input (triple width now) with autocomplete
+        // Seller name input with autocomplete
         const sellerValue = data['seller_name'] || '';
         const dataListId = `seller-list-${rowIndex}`;
-        tableHTML += `<td colspan="3">
-                      <input type="text" value="${escapeHtml(sellerValue)}"
-                      data-row="${rowIndex}" data-field="seller_name"
-                      list="${dataListId}"
-                      onchange="updateData(${rowIndex}, 'seller_name', this.value)">
-                      <datalist id="${dataListId}">
-                      ${sellerHistory.map(name => `<option value="${escapeHtml(name)}">`).join('')}
-                      </datalist>
-                      </td>`;
 
-        // Other fields
-        fields.forEach(field => {
-            const value = data[field] || '';
-            const cellClass = field === 'year' ? ' class="year-col"' : '';
-            // Add warning class for empty important fields
-            const isEmpty = !value || value.trim() === '';
-            const isImportant = ['make', 'model', 'vin'].includes(field);
-            const inputClass = (isEmpty && isImportant) ? 'class="missing-data"' : '';
-            tableHTML += `<td${cellClass}><input ${inputClass} type="text" value="${escapeHtml(value)}"
-                          data-row="${rowIndex}" data-field="${field}"
-                          onchange="updateData(${rowIndex}, '${field}', this.value)"></td>`;
-        });
-        tableHTML += '</tr>';
+        html += `
+            <div class="vehicle-card">
+                <!-- Vendor (Full Width) -->
+                <div class="seller-section">
+                    <label>Vendor:</label>
+                    <input type="text" value="${escapeHtml(sellerValue)}"
+                           data-row="${rowIndex}" data-field="seller_name"
+                           list="${dataListId}"
+                           class="seller-input"
+                           onchange="updateData(${rowIndex}, 'seller_name', this.value)">
+                    <datalist id="${dataListId}">
+                        ${sellerHistory.map(name => `<option value="${escapeHtml(name)}">`).join('')}
+                    </datalist>
+                </div>
 
-        // Second header row - Engine No wider (3 cols), VIN (2 cols)
-        tableHTML += '<tr class="header-row">';
-        tableHTML += `<th colspan="3">Engine No</th>`;
-        tableHTML += `<th colspan="2">VIN</th>`;
-        tableHTML += `<th>Reg</th>`;
-        tableHTML += `<th>Rego Expiry</th>`;
-        tableHTML += `<th>KMS</th>`;
-        tableHTML += '</tr>';
+                <div class="vehicle-content">
+                    <!-- Left Column: Fields -->
+                    <div class="vehicle-fields">
+                        <div class="field-group">
+                            <label>Stock #</label>
+                            <input type="text" value="${escapeHtml(data.mta || '')}"
+                                   data-row="${rowIndex}" data-field="mta"
+                                   onchange="updateData(${rowIndex}, 'mta', this.value)">
+                        </div>
 
-        // Second row of data
-        tableHTML += '<tr class="data-row">';
+                        <div class="field-group">
+                            <label>Year</label>
+                            <input type="text" value="${escapeHtml(data.year || '')}"
+                                   data-row="${rowIndex}" data-field="year"
+                                   onchange="updateData(${rowIndex}, 'year', this.value)">
+                        </div>
 
-        // Engine No - colspan 3 (wider)
-        let engineValue = data['engine_no'] || '';
-        tableHTML += `<td colspan="3"><input type="text" value="${escapeHtml(engineValue)}"
-                      data-row="${rowIndex}" data-field="engine_no"
-                      onchange="updateData(${rowIndex}, 'engine_no', this.value)"></td>`;
+                        <div class="field-group">
+                            <label>Make</label>
+                            <input type="text" value="${escapeHtml(data.make || '')}"
+                                   data-row="${rowIndex}" data-field="make"
+                                   class="${(!data.make || data.make.trim() === '') ? 'missing-data' : ''}"
+                                   onchange="updateData(${rowIndex}, 'make', this.value)">
+                        </div>
 
-        // VIN - colspan 2
-        let vinValue = data['vin'] || '';
-        tableHTML += `<td colspan="2"><input type="text" value="${escapeHtml(vinValue)}"
-                      data-row="${rowIndex}" data-field="vin"
-                      onchange="updateData(${rowIndex}, 'vin', this.value)"></td>`;
+                        <div class="field-group">
+                            <label>Model</label>
+                            <input type="text" value="${escapeHtml(data.model || '')}"
+                                   data-row="${rowIndex}" data-field="model"
+                                   class="${(!data.model || data.model.trim() === '') ? 'missing-data' : ''}"
+                                   onchange="updateData(${rowIndex}, 'model', this.value)">
+                        </div>
 
-        // Reg
-        let regValue = data['reg'] || '';
-        tableHTML += `<td><input type="text" value="${escapeHtml(regValue)}"
-                      data-row="${rowIndex}" data-field="reg"
-                      onchange="updateData(${rowIndex}, 'reg', this.value)"></td>`;
+                        <div class="field-group">
+                            <label>Body</label>
+                            <input type="text" value="${escapeHtml(data.type || '')}"
+                                   data-row="${rowIndex}" data-field="type"
+                                   onchange="updateData(${rowIndex}, 'type', this.value)">
+                        </div>
 
-        // Rego Expiry
-        let regoExpiryValue = data['rego_expiry'] || '';
-        tableHTML += `<td><input type="text" value="${escapeHtml(regoExpiryValue)}"
-                      data-row="${rowIndex}" data-field="rego_expiry"
-                      onchange="updateData(${rowIndex}, 'rego_expiry', this.value)"></td>`;
+                        <div class="field-group">
+                            <label>Auto/Manual</label>
+                            <input type="text" value="${escapeHtml(data.transmission || '')}"
+                                   data-row="${rowIndex}" data-field="transmission"
+                                   onchange="updateData(${rowIndex}, 'transmission', this.value)">
+                        </div>
+                    </div>
 
-        // KMS - format with commas
-        let odometerValue = data['odometer'] || '';
-        if (odometerValue) {
-            odometerValue = parseInt(odometerValue.toString().replace(/,/g, '')).toLocaleString();
-        }
-        tableHTML += `<td><input type="text" value="${escapeHtml(odometerValue)}"
-                      data-row="${rowIndex}" data-field="odometer"
-                      onchange="updateData(${rowIndex}, 'odometer', this.value)"></td>`;
+                    <!-- Right Column: Fields -->
+                    <div class="vehicle-fields">
+                        <div class="field-group">
+                            <label>Colour</label>
+                            <input type="text" value="${escapeHtml(data.color || '')}"
+                                   data-row="${rowIndex}" data-field="color"
+                                   onchange="updateData(${rowIndex}, 'color', this.value)">
+                        </div>
 
-        tableHTML += '</tr>';
+                        <div class="field-group">
+                            <label>VIN</label>
+                            <input type="text" value="${escapeHtml(data.vin || '')}"
+                                   data-row="${rowIndex}" data-field="vin"
+                                   class="${(!data.vin || data.vin.trim() === '') ? 'missing-data' : ''}"
+                                   onchange="updateData(${rowIndex}, 'vin', this.value)">
+                        </div>
 
-        // Filename row - spans all 8 columns (3+2+1+1+1)
-        tableHTML += '<tr class="filename-row">';
-        tableHTML += `<td colspan="8" class="filename-cell">Filename: ${escapeHtml(data['source_filename'] || '')}</td>`;
-        tableHTML += '</tr>';
+                        <div class="field-group">
+                            <label>Engine No</label>
+                            <input type="text" value="${escapeHtml(data.engine_no || '')}"
+                                   data-row="${rowIndex}" data-field="engine_no"
+                                   onchange="updateData(${rowIndex}, 'engine_no', this.value)">
+                        </div>
 
-        tableHTML += '</tbody>';
+                        <div class="field-group">
+                            <label>Registration</label>
+                            <input type="text" value="${escapeHtml(data.reg || '')}"
+                                   data-row="${rowIndex}" data-field="reg"
+                                   onchange="updateData(${rowIndex}, 'reg', this.value)">
+                        </div>
+
+                        <div class="field-group">
+                            <label>Registration Expiry</label>
+                            <input type="text" value="${escapeHtml(data.rego_expiry || '')}"
+                                   data-row="${rowIndex}" data-field="rego_expiry"
+                                   onchange="updateData(${rowIndex}, 'rego_expiry', this.value)">
+                        </div>
+
+                        <div class="field-group">
+                            <label>Odometer</label>
+                            <input type="text" value="${escapeHtml(data.odometer ? parseInt(data.odometer.toString().replace(/,/g, '')).toLocaleString() : '')}"
+                                   data-row="${rowIndex}" data-field="odometer"
+                                   onchange="updateData(${rowIndex}, 'odometer', this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Preview Image -->
+                    <div class="preview-section">
+                        ${data.thumbnail ? `
+                            <img src="${data.thumbnail}"
+                                 alt="Preview"
+                                 class="preview-image"
+                                 onclick="enlargeImage('${data.thumbnail}')"
+                                 title="Click to enlarge">
+                        ` : '<div class="no-preview">No preview available</div>'}
+                        <div class="filename-display">Source: ${escapeHtml(data.source_filename || '')}</div>
+                    </div>
+                </div>
+            </div>
+        `;
     });
 
-    tableHTML += '</table>';
-    dataTableContainer.innerHTML = tableHTML;
+    dataTableContainer.innerHTML = html;
+}
+
+// Image enlargement modal
+function enlargeImage(imgSrc) {
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.className = 'image-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="modal-close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+            <img src="${imgSrc}" alt="Enlarged preview">
+        </div>
+    `;
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    };
+    document.body.appendChild(modal);
 }
 
 // Update Data with smart corrections
@@ -394,6 +439,41 @@ async function downloadExcel() {
     } catch (error) {
         hideProgress();
         showMessage('Error generating Excel: ' + error.message, 'error');
+    }
+}
+
+async function downloadSinglePDF() {
+    showProgress('Generating single multi-page PDF...');
+
+    try {
+        const response = await fetch('/api/generate-single-pdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ data: extractedData })
+        });
+
+        if (!response.ok) {
+            throw new Error('Single PDF generation failed');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `declarations_${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        hideProgress();
+        showMessage('Single PDF downloaded successfully!', 'success');
+
+    } catch (error) {
+        hideProgress();
+        showMessage('Error generating single PDF: ' + error.message, 'error');
     }
 }
 

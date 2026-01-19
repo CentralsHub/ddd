@@ -13,6 +13,9 @@ import zipfile
 from datetime import datetime
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
+import base64
+from io import BytesIO
+from PIL import Image
 
 from ocr_processor import OCRProcessor
 from data_parser import DataParser
@@ -58,6 +61,45 @@ def cleanup_old_files():
                         os.unlink(file_path)
             except Exception as e:
                 print(f"Error deleting {file_path}: {e}")
+
+
+def generate_thumbnail(file_path, max_size=(400, 400)):
+    """Generate a base64-encoded thumbnail for preview"""
+    try:
+        # Handle PDFs - convert first page to image
+        if file_path.lower().endswith('.pdf'):
+            from pdf2image import convert_from_path
+            images = convert_from_path(file_path, first_page=1, last_page=1)
+            image = images[0] if images else None
+        else:
+            # Handle images
+            image = Image.open(file_path)
+
+        if image is None:
+            return None
+
+        # Create thumbnail
+        image.thumbnail(max_size, Image.Resampling.LANCZOS)
+
+        # Convert RGBA to RGB if necessary (for PNG with transparency)
+        if image.mode in ('RGBA', 'LA', 'P'):
+            # Create a white background
+            background = Image.new('RGB', image.size, (255, 255, 255))
+            if image.mode == 'P':
+                image = image.convert('RGBA')
+            background.paste(image, mask=image.split()[-1] if image.mode in ('RGBA', 'LA') else None)
+            image = background
+
+        # Convert to base64
+        buffered = BytesIO()
+        image.save(buffered, format="JPEG", quality=85)
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+
+        return f"data:image/jpeg;base64,{img_str}"
+
+    except Exception as e:
+        print(f"Error generating thumbnail: {e}", flush=True)
+        return None
 
 
 @app.route('/')
@@ -119,10 +161,14 @@ def upload_files():
                     extracted_data['source_filename'] = filename
                     extracted_data['ocr_text'] = ocr_text[:500]  # Include first 500 chars for debugging
 
+                    # Generate thumbnail for preview
+                    thumbnail = generate_thumbnail(file_path)
+
                     results.append({
                         'filename': filename,
                         'status': 'success',
-                        'data': extracted_data
+                        'data': extracted_data,
+                        'thumbnail': thumbnail
                     })
 
                 except Exception as e:
@@ -143,6 +189,31 @@ def upload_files():
             'status': 'success',
             'results': results
         })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/generate-single-pdf', methods=['POST'])
+def generate_single_pdf():
+    """
+    Generate a single multi-page PDF with all declarations
+    Returns a single PDF file
+    """
+    try:
+        data_list = request.json.get('data', [])
+
+        if not data_list:
+            return jsonify({'error': 'No data provided'}), 400
+
+        # Create unique output file
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        pdf_path = os.path.join(OUTPUT_FOLDER, f'declarations_{timestamp}.pdf')
+
+        # Generate single multi-page PDF
+        pdf_filler.fill_single_multipage_pdf(data_list, pdf_path)
+
+        return send_file(pdf_path, as_attachment=True, download_name=f'declarations_{timestamp}.pdf')
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -200,8 +271,8 @@ def generate_excel():
         ws.title = "Inspection Data"
 
         # Define headers
-        headers = ['Seller Name', 'Source File', 'Stock #', 'Year', 'Make', 'Model', 'Type', 'Auto/Man',
-                  'Colour', 'Engine No', 'VIN', 'Reg', 'Rego Expiry', 'Odometer (KMS)']
+        headers = ['Vendor', 'Source File', 'Stock #', 'Year', 'Make', 'Model', 'Body', 'Auto/Man',
+                  'Colour', 'Engine No', 'VIN', 'Registration', 'Registration Expiry', 'Odometer']
 
         # Write headers
         for col, header in enumerate(headers, 1):
@@ -262,16 +333,19 @@ def health_check():
 
 
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5001))
+
     print("=" * 80)
     print("Dec Filler Server Starting...")
     print(f"Upload folder: {UPLOAD_FOLDER}")
     print(f"Output folder: {OUTPUT_FOLDER}")
     print(f"Template PDF: {TEMPLATE_PDF}")
     print(f"Template exists: {os.path.exists(TEMPLATE_PDF)}")
+    print(f"Port: {port}")
     print("=" * 80)
-    print("\nServer running at http://localhost:5001")
-    print("Open your browser and navigate to http://localhost:5001")
+    print(f"\nServer running at http://localhost:{port}")
+    print(f"Open your browser and navigate to http://localhost:{port}")
     print("\nPress Ctrl+C to stop the server")
     print("=" * 80)
 
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=False, host='0.0.0.0', port=port)
