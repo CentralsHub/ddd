@@ -589,6 +589,13 @@ async function checkServerHealth() {
         if (!data.template_exists) {
             showMessage('Warning: Target.pdf template not found. PDF generation may fail.', 'error');
         }
+
+        if (!data.tesseract_available) {
+            showMessage('Warning: Tesseract OCR not available on server. Text extraction will not work. Server needs redeployment.', 'error');
+            console.error('Tesseract error:', data.tesseract_version);
+        } else {
+            console.log('Tesseract available:', data.tesseract_version);
+        }
     } catch (error) {
         showMessage('Warning: Could not connect to server. Please ensure the backend is running.', 'error');
     }
