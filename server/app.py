@@ -17,9 +17,9 @@ import base64
 from io import BytesIO
 from PIL import Image
 
-from ocr_processor import OCRProcessor
-from data_parser import DataParser
-from pdf_filler import PDFFiller
+from server.ocr_processor import OCRProcessor
+from server.data_parser import DataParser
+from server.pdf_filler import PDFFiller
 
 app = Flask(__name__, static_folder='../web', static_url_path='')
 CORS(app)
