@@ -1,11 +1,9 @@
 services:
   - type: web
-    name: daryls-declaration-decoder
+    name: ddd
     env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "cd server && python app.py"
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
-      - key: PORT
-        value: 10000
+    buildCommand: |
+      apt-get update &&
+      apt-get install -y tesseract-ocr poppler-utils &&
+      pip install -r requirements.txt
+    startCommand: gunicorn server.app:app
