@@ -23,5 +23,5 @@ COPY . .
 # Expose port (Render will override with PORT env var)
 EXPOSE 10000
 
-# Run gunicorn
-CMD gunicorn --bind 0.0.0.0:$PORT server.app:app --workers 2 --timeout 120
+# Run gunicorn with proper module path and logging
+CMD gunicorn --bind 0.0.0.0:$PORT --chdir /app --pythonpath /app server.app:app --workers 1 --timeout 120 --log-level debug --access-logfile - --error-logfile -
