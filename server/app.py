@@ -326,9 +326,24 @@ def generate_excel():
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
+    # Check if Tesseract is available
+    tesseract_available = False
+    tesseract_version = None
+    try:
+        import subprocess
+        result = subprocess.run(['tesseract', '--version'],
+                              capture_output=True, text=True, timeout=5)
+        tesseract_available = result.returncode == 0
+        if tesseract_available:
+            tesseract_version = result.stdout.split('\n')[0]
+    except Exception as e:
+        tesseract_version = f"Error: {str(e)}"
+
     return jsonify({
         'status': 'healthy',
-        'template_exists': os.path.exists(TEMPLATE_PDF)
+        'template_exists': os.path.exists(TEMPLATE_PDF),
+        'tesseract_available': tesseract_available,
+        'tesseract_version': tesseract_version
     })
 
 

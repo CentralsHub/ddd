@@ -1,9 +1,10 @@
 services:
   - type: web
     name: ddd
-    env: python
-    buildCommand: |
-      apt-get update &&
-      apt-get install -y tesseract-ocr poppler-utils &&
-      pip install -r requirements.txt
-    startCommand: gunicorn server.app:app
+    env: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 10000
