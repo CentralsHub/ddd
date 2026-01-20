@@ -112,7 +112,7 @@ class PDFFiller:
             can.drawString(x_rego_exp, y_row3 + 3, str(data['rego_expiry']))
 
         # KMS (far right of row 3) - moved up 2px
-        x_kms = 536
+        x_kms = 537
         if data.get('odometer'):
             can.drawString(x_kms, y_row3 + 3, str(data['odometer']))
 
