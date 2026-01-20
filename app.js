@@ -5,6 +5,7 @@ let extractedData = [];
 let sellerHistory = JSON.parse(localStorage.getItem('sellerHistory') || '[]');
 
 // DOM Elements
+const API_BASE = "https://ddd-6wbk.onrender.com";
 const uploadZone = document.getElementById('upload-zone');
 const fileInput = document.getElementById('file-input');
 const fileList = document.getElementById('file-list');
@@ -20,6 +21,8 @@ const downloadExcelBtn = document.getElementById('download-excel-btn');
 const downloadSinglePdfBtn = document.getElementById('download-single-pdf-btn');
 const downloadPdfsBtn = document.getElementById('download-pdfs-btn');
 const startOverBtn = document.getElementById('start-over-btn');
+
+const apiUrl = (path) => `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
 
 // Prevent default drag/drop behavior on the whole page
 window.addEventListener('dragover', (e) => {
@@ -170,7 +173,7 @@ async function processFiles() {
     });
 
     try {
-        const response = await fetch('/api/upload', {
+        const response = await fetch(apiUrl('/api/upload'), {
             method: 'POST',
             body: formData
         });
@@ -411,7 +414,7 @@ async function downloadExcel() {
     showProgress('Generating Excel file...');
 
     try {
-        const response = await fetch('/api/generate-excel', {
+        const response = await fetch(apiUrl('/api/generate-excel'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -446,7 +449,7 @@ async function downloadSinglePDF() {
     showProgress('Generating single multi-page PDF...');
 
     try {
-        const response = await fetch('/api/generate-single-pdf', {
+        const response = await fetch(apiUrl('/api/generate-single-pdf'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -481,7 +484,7 @@ async function downloadPDFs() {
     showProgress('Generating filled PDF declarations...');
 
     try {
-        const response = await fetch('/api/generate-pdfs', {
+        const response = await fetch(apiUrl('/api/generate-pdfs'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -580,7 +583,7 @@ function startOver() {
 // Check server health on load
 async function checkServerHealth() {
     try {
-        const response = await fetch('/api/health');
+        const response = await fetch(apiUrl('/api/health'));
         const data = await response.json();
 
         if (!data.template_exists) {
