@@ -17,8 +17,9 @@ class DataParser:
             'odometer': r'Odometer\s*:?\s*([0-9,\s]+)',  # More flexible, allows spaces
             # More flexible engine number pattern - can be alphanumeric with various lengths
             'engine_no': r'(?:Engine|o")\s*(?:No|N0)\s*:?\s*([A-Z0-9]{6,15})',
-            # VIN pattern - capture 17+ chars but stop before "Reg" keyword to avoid grabbing too much
-            'vin': r'VIN\s*:?\s*([A-Z0-9\s]{15,25})(?=\s*(?:Reg|$))',
+            # VIN pattern - more flexible to catch various formats
+            # Matches VIN followed by 17 alphanumeric characters (with optional spaces/dashes)
+            'vin': r'VIN\s*:?\s*([A-Z0-9\s\-]{15,25})(?=\s*(?:Reg|Registration|$|\n))',
             'reg': r'Reg\s*:?\s*([A-Z0-9]+)',
             'rego_expiry': r'Rego\s+Expiry\s*:?\s*(\d{1,2}/\d{1,2}/\d{2,4})',
             'vehicle_description': r'(\d{2}/\d{2})\s*-\s*(\d{2}/\d{2})\s+([A-Z]+)\s+([A-Z0-9\s]+?)\s+(BK|MY|GL|GX|SP|LIMITED|SPORT|NEO|MAXX)[^\n]*?(\d[A-Z]{1,2}\s+(?:SEDAN|HATCH|WAGON|UTE|SUV|COUPE|CONVERTIBLE|VAN))[^\n]*?(\d\.?\d?L)?\s*(\d\s*CYL)?\s*(\d\s*SP)?\s*(MANUAL|AUTO|AUTOMATIC)?(?:\s+([A-Z]+(?:\s+[A-Z]+)*))?'
@@ -117,8 +118,10 @@ class DataParser:
         # Fix common OCR mistakes in VIN and engine number (O -> 0)
         # Only apply to these fields to avoid breaking text matching elsewhere
         if data['vin']:
-            # Remove spaces first, then replace O with 0
-            data['vin'] = data['vin'].replace(' ', '').replace('O', '0')
+            # Remove spaces and dashes first, then replace O with 0
+            data['vin'] = data['vin'].replace(' ', '').replace('-', '').replace('O', '0')
+            # VINs don't contain I, O, or Q - replace common OCR errors
+            data['vin'] = data['vin'].replace('I', '1').replace('Q', '0')
         if data['engine_no']:
             data['engine_no'] = data['engine_no'].replace('O', '0')
 

@@ -78,6 +78,13 @@ def generate_thumbnail(file_path, max_size=(400, 400)):
         if image is None:
             return None
 
+        # Auto-orient image based on EXIF data (fixes sideways phone photos)
+        from PIL import ImageOps
+        try:
+            image = ImageOps.exif_transpose(image)
+        except:
+            pass
+
         # Create thumbnail
         image.thumbnail(max_size, Image.Resampling.LANCZOS)
 
