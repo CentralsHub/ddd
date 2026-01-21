@@ -2,6 +2,17 @@
 
 Automated Inspection Report to Declaration Converter
 
+## 🚀 Quick Start
+
+**For Windows Users (Recommended - Much Faster!):**
+1. See [SETUP_WINDOWS.md](SETUP_WINDOWS.md) for local installation
+2. Double-click `START_SERVER.bat` to run
+3. No internet needed, instant processing!
+
+**Online Version (Slower - Free Tier):**
+- https://centralshub.github.io/ddd/
+- Note: Takes 60+ seconds to wake up, times out with multiple files
+
 ## Features
 
 - 🚗 OCR extraction from inspection reports (PDF & images)
