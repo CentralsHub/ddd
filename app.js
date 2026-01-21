@@ -5,7 +5,7 @@ let extractedData = [];
 let sellerHistory = JSON.parse(localStorage.getItem('sellerHistory') || '[]');
 
 // DOM Elements
-const API_BASE = "https://ddd-6wbk.onrender.com";
+const API_BASE = "https://ddd-nq4q.onrender.com";
 const uploadZone = document.getElementById('upload-zone');
 const fileInput = document.getElementById('file-input');
 const fileList = document.getElementById('file-list');
