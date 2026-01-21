@@ -20,7 +20,7 @@ class DataParser:
             # VIN pattern - more flexible to catch various formats
             # Matches VIN followed by 17 alphanumeric characters (with optional spaces/dashes)
             'vin': r'VIN\s*:?\s*([A-Z0-9\s\-]{15,25})(?=\s*(?:Reg|Registration|$|\n))',
-            'reg': r'Reg\s*:?\s*([A-Z0-9]+)',
+            'reg': r'(?:Reg|Registration)\s*:?\s*([A-Z0-9]{3,8})',
             'rego_expiry': r'Rego\s+Expiry\s*:?\s*(\d{1,2}/\d{1,2}/\d{2,4})',
             'vehicle_description': r'(\d{2}/\d{2})\s*-\s*(\d{2}/\d{2})\s+([A-Z]+)\s+([A-Z0-9\s]+?)\s+(BK|MY|GL|GX|SP|LIMITED|SPORT|NEO|MAXX)[^\n]*?(\d[A-Z]{1,2}\s+(?:SEDAN|HATCH|WAGON|UTE|SUV|COUPE|CONVERTIBLE|VAN))[^\n]*?(\d\.?\d?L)?\s*(\d\s*CYL)?\s*(\d\s*SP)?\s*(MANUAL|AUTO|AUTOMATIC)?(?:\s+([A-Z]+(?:\s+[A-Z]+)*))?'
         }
@@ -110,6 +110,15 @@ class DataParser:
             'reg': self.extract_field(text, self.patterns['reg']),
             'rego_expiry': self.extract_field(text, self.patterns['rego_expiry'])
         }
+
+        # Fallback VIN detection - look for any 17-character alphanumeric sequence
+        # This catches VINs even if "VIN" label is misread
+        if not data['vin'] or len(data['vin'].replace(' ', '')) < 17:
+            # Look for 17-character sequences that look like VINs
+            fallback_vin_pattern = r'\b([A-Z0-9]{17})\b'
+            fallback_match = re.search(fallback_vin_pattern, text)
+            if fallback_match:
+                data['vin'] = fallback_match.group(1)
 
         # Clean odometer (remove commas and spaces)
         if data['odometer']:

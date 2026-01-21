@@ -13,7 +13,7 @@ import os
 class OCRProcessor:
     """Processes images and PDFs to extract text using OCR"""
 
-    def __init__(self, tesseract_config='--psm 6'):
+    def __init__(self, tesseract_config='--psm 6 --oem 3'):
         """
         Initialize OCR processor
 
@@ -21,6 +21,7 @@ class OCRProcessor:
             tesseract_config: Tesseract configuration string
                 --psm 6: Assume uniform block of text (default)
                 --psm 4: Assume single column of text
+                --oem 3: Use both legacy and LSTM OCR engines
         """
         self.config = tesseract_config
 
