@@ -24,4 +24,5 @@ COPY . .
 EXPOSE 10000
 
 # Run gunicorn with proper module path and logging
-CMD gunicorn --bind 0.0.0.0:$PORT --chdir /app --pythonpath /app server.app:app --workers 1 --timeout 120 --log-level debug --access-logfile - --error-logfile -
+# Increased timeout to 300s for OCR processing multiple files
+CMD gunicorn --bind 0.0.0.0:$PORT --chdir /app --pythonpath /app server.app:app --workers 1 --timeout 300 --log-level info --access-logfile - --error-logfile -

@@ -164,7 +164,7 @@ function formatFileSize(bytes) {
 async function processFiles() {
     if (selectedFiles.length === 0) return;
 
-    showProgress('Uploading and processing files...', true);
+    showProgress('Uploading and processing files... (First request may take 60+ seconds as server wakes up)', true);
     processBtn.disabled = true;
 
     const formData = new FormData();
@@ -173,13 +173,21 @@ async function processFiles() {
     });
 
     try {
+        // Set a longer timeout for free Render tier (can take 50+ seconds to wake up)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutes
+
         const response = await fetch(apiUrl('/api/upload'), {
             method: 'POST',
-            body: formData
+            body: formData,
+            signal: controller.signal
         });
 
+        clearTimeout(timeoutId);
+
         if (!response.ok) {
-            throw new Error('Upload failed');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Upload failed');
         }
 
         const result = await response.json();
@@ -208,7 +216,13 @@ async function processFiles() {
 
     } catch (error) {
         hideProgress();
-        showMessage('Error processing files: ' + error.message, 'error');
+        let errorMsg = 'Error processing files: ' + error.message;
+        if (error.name === 'AbortError') {
+            errorMsg = 'Request timed out after 3 minutes. The server may be overloaded. Please try again with fewer files.';
+        } else if (error.message.includes('Failed to fetch')) {
+            errorMsg = 'Cannot connect to server. The server may be sleeping (free tier). Please wait 60 seconds and try again.';
+        }
+        showMessage(errorMsg, 'error');
         processBtn.disabled = false;
     }
 }
