@@ -21,7 +21,7 @@ from server.ocr_processor import OCRProcessor
 from server.data_parser import DataParser
 from server.pdf_filler import PDFFiller
 
-app = Flask(__name__, static_folder='../web', static_url_path='')
+app = Flask(__name__, static_folder='..', static_url_path='')
 CORS(app)
 
 # Configuration
